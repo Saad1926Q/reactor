@@ -13,7 +13,7 @@ for path in pipe_paths:
 fds = [os.open(path, os.O_RDONLY | os.O_NONBLOCK) for path in pipe_paths]
 
 
-def handle_fd(fd):
+def handle_fd(fd, idx):
     try:
         data = os.read(fd, 100)
     except OSError as e:
@@ -23,6 +23,9 @@ def handle_fd(fd):
 
     if data:
         print(data.decode(), end="")
+    else:
+        os.close(fd)
+        fds[idx] = os.open(pipe_paths[idx], os.O_RDONLY | os.O_NONBLOCK)
 
 
 while True:
@@ -30,7 +33,8 @@ while True:
         readable, _, _ = select.select(fds, [], [])
 
         for fd in readable:
-            handle_fd(fd)
+            idx = fds.index(fd)
+            handle_fd(fd, idx)
     except KeyboardInterrupt:
         break
 
